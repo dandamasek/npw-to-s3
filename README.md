@@ -116,7 +116,7 @@ This configuration ensures that the EC2 instance will be started and stopped acc
 
 
 # CONFIG_FILE
-create config.py and include all theese:
+create config.py in both SERVER and CLIENT directory, and include all theese:
 
 aws_access_key_id="<aws_access_key_id>"
 aws_secret_access_key="<aws_access_key_id>"
