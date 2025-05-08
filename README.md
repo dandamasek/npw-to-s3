@@ -44,7 +44,7 @@ This guide describes how to manually create the same infrastructure that can be 
 1. Navigate to the EC2 service
 2. Launch a new instance with the following parameters:
    - AMI: ami-0866a3c8686eaeeba (or equivalent current Amazon Linux)
-   - Instance type: t2.micro
+   - Instance type: t2.medium
    - Key pair: AdminKeyPair (create if it doesn't exist)
    - Security group: Allow SSH (22) and HTTPS (443) ports
    - Add 25GB EBS storage
