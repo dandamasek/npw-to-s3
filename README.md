@@ -1,5 +1,5 @@
 # AWS infrastructure
-Python 3.13.2
+Python 3.13.2 is higly recommended
 
 ## Upload stack
 CloudFormation > Create stack > Choose an existing template > Upload a template file (upload infrastrucute.yaml)
