@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: "2025-4-10"
+Metadata:
+    Generator: "former2"
+Description: ""
+Resources:
+    EC2SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "launch-wizard-2 created 2024-10-21T14:13:31.431Z"
+            GroupName: "launch-wizard-2"
+            VpcId: "vpc-0dbdd7fdb43847323"
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 22
+                IpProtocol: "tcp"
+                ToPort: 22
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 443
+                IpProtocol: "tcp"
+                ToPort: 443
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    IAMInstanceProfile:
+        Type: "AWS::IAM::InstanceProfile"
+        Properties:
+            Path: "/"
+            InstanceProfileName: "ec2-s3-full-access"
+            Roles: 
+              - "ec2-s3-full-access"
+
+    EC2Instance:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0866a3c8686eaeeba"
+            InstanceType: "t2.micro"
+            KeyName: "AdminKeyPair"
+            AvailabilityZone: !Sub "${AWS::Region}d"
+            Tenancy: "default"
+            SubnetId: "subnet-00737ee10fbd01574"
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/sda1"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 25
+                    SnapshotId: "snap-021176b1e05cb6895"
+                    VolumeType: "gp3"
+                    DeleteOnTermination: true
+            IamInstanceProfile: "ec2-s3-full-access"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Virtual"
+              - 
+                Key: "schedule"
+                Value: "16:55-18:00"
+              - 
+                Key: "schedule-tz"
+                Value: "UTC"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2VolumeAttachment:
+        Type: "AWS::EC2::VolumeAttachment"
+        Properties:
+            VolumeId: "vol-0c3f87de04b7da584"
+            InstanceId: !Ref EC2Instance
+            Device: "/dev/sda1"
+
+    EC2NetworkInterfaceAttachment:
+        Type: "AWS::EC2::NetworkInterfaceAttachment"
+        Properties:
+            NetworkInterfaceId: "eni-032db7a516da3c4c3"
+            DeviceIndex: 0
+            InstanceId: !Ref EC2Instance
+            DeleteOnTermination: true
+
+    LambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: "EC2InstanceScheduler"
+            Handler: "lambda_function.lambda_handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "prod-iad-c1-djusa-tasks"
+                S3Key: !Sub "/snapshots/${AWS::AccountId}/EC2InstanceScheduler-01fda111-bcc8-4537-abb2-f0e5dc581d2e"
+                S3ObjectVersion: "Yn0QaXQXr9tX6Xc0n0QaEfkj9HT_h..G"
+            MemorySize: 128
+            Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LambdaEC2ControlRole"
+            Runtime: "python3.9"
+            Timeout: 3
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: 512
+
+    LambdaFunction2:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: "Return default VPC ID and Subnets"
+            FunctionName: "CFGetDefaultVpcIdTut"
+            Handler: "index.lambda_handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "prod-iad-c1-djusa-tasks"
+                S3Key: !Sub "/snapshots/${AWS::AccountId}/CFGetDefaultVpcIdTut-2aab9fc4-3cba-4c73-a027-e7e86eb43935"
+                S3ObjectVersion: "r8l8_l5MUU2GRFlFtOgAGZzzbNFhfw7q"
+            MemorySize: 512
+            Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/CFN-SM-IM-Lambda-catalog2-LambdaExecutionRole-0ehW60mmRhnt"
+            Runtime: "python3.10"
+            Timeout: 5
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: 512
+
+    LambdaFunction3:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: "CFN-SM-IM-Lambda-catalog2-DelayLambda-54Y1xJfR0Rpt"
+            Handler: "index.handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+                S3Bucket: "prod-iad-c1-djusa-tasks"
+                S3Key: !Sub "/snapshots/${AWS::AccountId}/CFN-SM-IM-Lambda-catalog2-DelayLambda-54Y1xJfR0Rpt-62a9fe62-569a-45d3-bf17-25506f9d4ef0"
+                S3ObjectVersion: "EEnKIc1ce6Umfb3d7JVN77PFnKlXfvIY"
+            MemorySize: 128
+            Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/CFN-SM-IM-Lambda-catalog2-LambdaExecutionRole-0ehW60mmRhnt"
+            Runtime: "python3.10"
+            Timeout: 660
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: 512
+
+    LambdaPermission:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            Action: "lambda:InvokeFunction"
+            FunctionName: !GetAtt LambdaFunction.Arn
+            Principal: "events.amazonaws.com"
+            SourceArn: !GetAtt EventsRule.Arn
+
+    EventsRule:
+        Type: "AWS::Events::Rule"
+        Properties:
+            Name: "ec2-cron"
+            Description: "ec2-cron"
+            ScheduleExpression: "cron(00 17,18 * * ? *)"
+            State: "ENABLED"
+            Targets: 
+              - 
+                Arn: !GetAtt LambdaFunction.Arn
+                Id: "2cb615mcd4oksy8x9cf"
+            EventBusName: "default"
+
+    # Přidaný S3 bucket a jeho politika
+    MeteoDataBucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "meteo_data"
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: false
+                BlockPublicPolicy: false
+                IgnorePublicAcls: false
+                RestrictPublicBuckets: false
+
+    MeteoDataBucketPolicy:
+        Type: "AWS::S3::BucketPolicy"
+        Properties:
+            Bucket: !Ref MeteoDataBucket
+            PolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: "Allow"
+                      Principal: "*"
+                      Action: "s3:GetObject"
+                      Resource: !Join 
+                          - ""
+                          - - "arn:aws:s3:::"
+                            - !Ref MeteoDataBucket
+                            - "/*"
